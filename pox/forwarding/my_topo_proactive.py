@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # Copyright 2013 James McCauley
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,7 +56,7 @@ switches_by_dpid = {}
 switches_by_id = {}
 
 # [sw1][sw2] -> (distance, intermediate)
-path_map = defaultdict(lambda:defaultdict(lambda:(None,None))) # shortes paths
+path_map = defaultdict(lambda:defaultdict(lambda:(None,None))) # shortest paths
 # [sw1][sw2] -> [paths as (distance, intermediate)]
 all_paths_map = defaultdict(lambda:defaultdict(lambda:[])) # all paths
 
@@ -95,7 +96,6 @@ def _calc_paths ():
     path_map[k][k] = (0,None) # distance, intermediate
     all_raw_paths[k][k].append([]) # useful for get_path function, not checked yet
 
-
   #dump()
   print "\nWe start looking for paths"
   for k in sws:
@@ -105,7 +105,7 @@ def _calc_paths ():
           if path_map[k][j][0] is not None:
             # i -> k -> j exists
             ikj_dist = path_map[i][k][0]+path_map[k][j][0]
-            print "\nthis path exists", i, " -> ", k, "->", j, "len ", ikj_dist,
+            # print "\nthis path exists", i, " -> ", k, "->", j, "len ", ikj_dist,
             # add to all paths
             if k != i and k != j and i != j:
               if (ikj_dist, k) not in  all_paths_map[i][j]:
@@ -113,9 +113,9 @@ def _calc_paths ():
                 all_raw_paths[i][j].append(_get_raw_multipath(i, j, k))
             if path_map[i][j][0] is None or ikj_dist < path_map[i][j][0]:
               # i -> k -> j is better than existing
-              print "\n... and is better than existing ", path_map[i][j]
+              # print "\n... and is better than existing ", path_map[i][j]
               path_map[i][j] = (ikj_dist, k)
-              print path_map[i][j]
+              # print path_map[i][j]
 
   # Delete paths consisting src or dst and sort them
   for src in sws:
@@ -136,25 +136,25 @@ def _calc_paths ():
 
 
 
-  print "\nWe print all shortest paths"
-  for i in sws:
-    for j in sws:
-      print i, j, path_map[i][j]
+  # print "\nWe print all shortest paths"
+  # for i in sws:
+  #   for j in sws:
+  #     print i, j, path_map[i][j]
+  #
+  # print "\nWe print ALL paths"
+  # for i in sws:
+  #   for j in sws:
+  #     print i, j, all_paths_map[i][j]
+  #
+  # print "\nWe print ALL raw paths"
+  # for i in sws:
+  #   for j in sws:
+  #     print i, j, all_raw_paths[i][j]
 
-  print "\nWe print ALL paths"
-  for i in sws:
-    for j in sws:
-      print i, j, all_paths_map[i][j]
-
-  print "\nWe print ALL raw paths"
-  for i in sws:
-    for j in sws:
-      print i, j, all_raw_paths[i][j]
-
-  print "\nWe print ALL cooked paths"
-  for i in sws:
-    for j in sws:
-      print i, j,  all_cooked_paths[i][j]
+  # print ("\nWe print ALL cooked paths")
+  # for i in sws:
+  #   for j in sws:
+  #     print (i, j,  all_cooked_paths[i][j])
 
 
 

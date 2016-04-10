@@ -1,17 +1,29 @@
+Odpalanie kontrolera
+cd mgr/pox
+# przykladowy zwykly l2
 ./pox.py openflow.discovery forwarding.l2_multi log --no-default
+# moj proactive z wyszukiwaniem sciezek
 ./pox.py openflow.discovery forwarding.my_topo_proactive log --no-default
 
-(tego polecenia używamy na maszynce)
+zbieranie statystyk
+./pox.py openflow.discovery forwarding.my_topo_proactive misc.flow_stats
+
+
+(tego polecenia używamy na maszynce, ale lepiej odpoalić przez ssh)
 sudo mn --custom ~/mininet/custom/topo-3sw-2host.py --topo mytopo --test pingall --controller=remote
 
 ssh:
-odpalamy maszynkę z mininetem
+odpalamy maszynkę z mininetem (przez VBoxa)
 ifconfig: ip z 192...
 
 ssh -X mininet@192.168.56.101
+pass: mininet
 odaplamy w mininecie skrypt z siecią
 cd mininet_scripts
+sudo python 5sw-2host-proactive_net.py
+albo
 sudo python my_proactive_net.py
+albo jakiś inny
 [jeżeli zacięło się na switchach to pewnie nie jest odpalony kontroler, Ctrl+c, sudo mn do wyczyszczenia o od nowa]
 
 loklany skrypt do odpalania
