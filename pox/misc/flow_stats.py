@@ -28,51 +28,26 @@ statistics handler contains a summary of web-only traffic.
 from pox.core import core
 from pox.lib.util import dpidToStr
 import pox.openflow.libopenflow_01 as of
-from collections import defaultdict
 
 # include as part of the betta branch
 from pox.openflow.of_json import *
 
-paths = defaultdict(lambda:defaultdict(lambda:[]))
 log = core.getLogger()
-sws = {} # switches
-
-def get_paths():
-  global sws
-  from pox.forwarding.my_topo_proactive import switches_by_dpid
-  if sws != switches_by_dpid:
-    sws = switches_by_dpid
-    log.debug("NOT EQUAL - switches has changed since last time we checked")
-    # to do - > add some clearing for stats
-  else:
-    log.debug("EQUAL")
-  for sw in sws.values():
-      log.debug("Switch %s, ports %s", dpidToStr(sw.dpid), sw.ports)
-
-  global paths
-  from pox.forwarding.my_topo_proactive import all_cooked_paths
-  if paths != all_cooked_paths:
-    paths = all_cooked_paths
-    log.debug("NOT EQUAL - paths has changed since last time we checked")
-    # to do - > add some clearing for stats
-  else:
-    log.debug("EQUAL")
 
 # handler for timer function that sends the requests to all the
 # switches connected to the controller.
 def _timer_func ():
-  get_paths()
   for connection in core.openflow._connections.values():
     connection.send(of.ofp_stats_request(body=of.ofp_flow_stats_request()))
     connection.send(of.ofp_stats_request(body=of.ofp_port_stats_request()))
-  #log.debug("Sent %i flow/port stats request(s)", len(core.openflow._connections))
+  log.info("Sent %i flow/port stats request(s)", len(core.openflow._connections))
 
 # handler to display flow statistics received in JSON format
 # structure of event.stats is defined by ofp_flow_stats()
 def _handle_flowstats_received (event):
   stats = flow_stats_to_list(event.stats)
-  # log.debug("FlowStatsReceived from %s: %s",
-  #   dpidToStr(event.connection.dpid), stats)
+  log.info("FlowStatsReceived from %s: %s",
+    dpidToStr(event.connection.dpid), stats)
 
   # Get number of bytes/packets in flows for web traffic only
   web_bytes = 0
@@ -83,13 +58,13 @@ def _handle_flowstats_received (event):
       web_bytes += f.byte_count
       web_packet += f.packet_count
       web_flows += 1
-  # log.info("Web traffic from %s: %s bytes (%s packets) over %s flows",
-  #   dpidToStr(event.connection.dpid), web_bytes, web_packet, web_flows)
+  log.info("Web traffic from %s: %s bytes (%s packets) over %s flows",
+    dpidToStr(event.connection.dpid), web_bytes, web_packet, web_flows)
 
 # handler to display port statistics received in JSON format
 def _handle_portstats_received (event):
   stats = flow_stats_to_list(event.stats)
-  log.debug("PortStatsReceived from %s: %s",
+  log.info("PortStatsReceived from %s: %s",
     dpidToStr(event.connection.dpid), stats)
 
 # main functiont to launch the module
