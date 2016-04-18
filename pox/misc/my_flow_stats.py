@@ -38,11 +38,36 @@ log = core.getLogger()
 sws = {} # switches
 
 # get paths from my_topo_proactive module
+# !!! we don't use my_topo_proactive module anymore
+# def get_paths():
+#   global sws
+#   from pox.forwarding.my_topo_proactive import switches_by_dpid
+#   if sws != switches_by_dpid:
+#     sws = switches_by_dpid
+#     log.debug("NOT EQUAL - switches has changed since last time we checked")
+#     # to do - > add some clearing for stats
+#   else:
+#     # log.debug("EQUAL")
+#     pass
+#   for sw in sws.values():
+#       #log.debug("Switch %s, ports %s", dpidToStr(sw.dpid), sw.ports)
+#       pass
+#
+#   global paths
+#   from pox.forwarding.my_topo_proactive import all_cooked_paths
+#   if paths != all_cooked_paths:
+#     paths = all_cooked_paths
+#     log.debug("NOT EQUAL - paths has changed since last time we checked")
+#     # to do - > add some clearing for stats
+#   else:
+#     log.debug("EQUAL - switches has not changed since last time we checked")
+
+# get paths from my_l2_multi module
 def get_paths():
   global sws
-  from pox.forwarding.my_topo_proactive import switches_by_dpid
-  if sws != switches_by_dpid:
-    sws = switches_by_dpid
+  from pox.forwarding.my_l2_multi import switches
+  if sws != switches:
+    sws = switches
     log.debug("NOT EQUAL - switches has changed since last time we checked")
     # to do - > add some clearing for stats
   else:
@@ -53,13 +78,15 @@ def get_paths():
       pass
 
   global paths
-  from pox.forwarding.my_topo_proactive import all_cooked_paths
+  from pox.forwarding.my_l2_multi import all_cooked_paths
   if paths != all_cooked_paths:
     paths = all_cooked_paths
     log.debug("NOT EQUAL - paths has changed since last time we checked")
     # to do - > add some clearing for stats
   else:
     log.debug("EQUAL - switches has not changed since last time we checked")
+
+
 
 # when _handle_portstats_received will receive stats for port on switch
 # it will send them here to be applied for paths,
