@@ -34,6 +34,7 @@ from pox.lib.recoco import Timer
 from collections import defaultdict
 from pox.openflow.discovery import Discovery
 from pox.lib.util import dpid_to_str
+from pox.host_tracker import host_tracker
 import time
 
 log = core.getLogger()
@@ -55,6 +56,9 @@ all_paths_map = defaultdict(lambda:defaultdict(lambda:[])) # all paths
 all_raw_paths = defaultdict(lambda:defaultdict(lambda:[])) # all raw paths
 
 all_cooked_paths = defaultdict(lambda:defaultdict(lambda:[])) # all paths
+
+# [host mac] -> [switch dpid], to know to which switch is this host connected to
+host_switch_pair = defaultdict(lambda:None)
 
 # Waiting path.  (dpid,xid)->WaitingPath
 waiting_paths = {}
@@ -153,10 +157,10 @@ def _calc_paths ():
   #   for j in sws:
   #     print i, j, all_raw_paths[i][j]
 
-  print ("\nWe print ALL cooked paths")
-  for i in sws:
-    for j in sws:
-      print (i, j,  all_cooked_paths[i][j])
+  # print ("\nWe print ALL cooked paths")
+  # for i in sws:
+  #   for j in sws:
+  #     print (i, j,  all_cooked_paths[i][j])
 
 
 
@@ -517,7 +521,15 @@ class l2_multi (EventMixin):
     def startup ():
       core.openflow.addListeners(self, priority=0)
       core.openflow_discovery.addListeners(self)
-    core.call_when_ready(startup, ('openflow','openflow_discovery'))
+      core.host_tracker.addListeners(self)
+    core.call_when_ready(startup, ('openflow','openflow_discovery','host_tracker'))
+
+  def _handle_HostEvent (self, event):
+    """ Here is the place where is used the listener"""
+    print "Switch dpid, switchport and host mac...", event.entry
+    host_switch_pair[event.entry.macaddr] = event.entry.dpid
+    print type(event.entry.macaddr), event.entry.macaddr, host_switch_pair[event.entry.macaddr]
+
 
   def _handle_LinkEvent (self, event):
     def flip (link):
@@ -595,6 +607,8 @@ class l2_multi (EventMixin):
 
 
 def launch ():
+  from pox.host_tracker import launch
+  launch()
   core.registerNew(l2_multi)
 
   timeout = min(max(PATH_SETUP_TIME, 5) * 2, 15)

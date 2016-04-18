@@ -36,31 +36,24 @@ from pox.openflow.of_json import *
 paths = defaultdict(lambda:defaultdict(lambda:[]))
 log = core.getLogger()
 sws = {} # switches
+flow_list = [] # list of all flows
+#host_switch_pair = defaultdict(lambda:None)
 
-# get paths from my_topo_proactive module
-# !!! we don't use my_topo_proactive module anymore
-# def get_paths():
-#   global sws
-#   from pox.forwarding.my_topo_proactive import switches_by_dpid
-#   if sws != switches_by_dpid:
-#     sws = switches_by_dpid
-#     log.debug("NOT EQUAL - switches has changed since last time we checked")
-#     # to do - > add some clearing for stats
-#   else:
-#     # log.debug("EQUAL")
-#     pass
-#   for sw in sws.values():
-#       #log.debug("Switch %s, ports %s", dpidToStr(sw.dpid), sw.ports)
-#       pass
-#
-#   global paths
-#   from pox.forwarding.my_topo_proactive import all_cooked_paths
-#   if paths != all_cooked_paths:
-#     paths = all_cooked_paths
-#     log.debug("NOT EQUAL - paths has changed since last time we checked")
-#     # to do - > add some clearing for stats
-#   else:
-#     log.debug("EQUAL - switches has not changed since last time we checked")
+class Flow:
+
+  def __init__ (self):
+    self.proto = None # type of protocol [tcp/udp -> not 100% sure]
+    self.ip_src = None
+    self.ip_dst = None
+    # ports of transport protocol [tcp/udp]
+    self.tp_src = None
+    self.tp_dst = None
+    self.match = [self.proto, self.ip_src, self.ip_dst, self.tp_src, self.tp_dst]
+    self.switch_src = None # switch connected to ip_src host
+    self.switch_dst = None # switch connected to ip_dst host
+    self.path = None
+    self.byte_count = None
+
 
 # get paths from my_l2_multi module
 def get_paths():
@@ -84,7 +77,10 @@ def get_paths():
     log.debug("NOT EQUAL - paths has changed since last time we checked")
     # to do - > add some clearing for stats
   else:
-    log.debug("EQUAL - switches has not changed since last time we checked")
+    log.debug("EQUAL - paths has not changed since last time we checked")
+
+  from pox.forwarding.my_l2_multi import host_switch_pair
+  global host_switch_pair
 
 
 
@@ -102,7 +98,7 @@ def apply_stats_to_paths(switch, port, stats):
           if switch == dpidToStr(switch_port_pair[0].dpid) and port == switch_port_pair[1]:
             # log.debug("switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[1] )
             # log.debug(path)
-            #switch_port_pair.append(stats) -> this isn't working, what is better?
+            # switch_port_pair.append(stats) -> this isn't working, what is better?
             # to do -> how append stats?
             # print stats
             pass
@@ -124,7 +120,44 @@ def _handle_flowstats_received (event):
   stats = flow_stats_to_list(event.stats)
   log.debug("FlowStatsReceived from %s: %s",
     dpidToStr(event.connection.dpid), stats)
+  for flow_stats in event.stats:
+    # log.debug("Bytes in flow match%s: %s",
+    #   flow_stats.match, flow_stats.byte_count)
 
+    # We want to gather stats for flow only in switch connected to src host
+    # to avoid duplication
+    #log.debug("Flow stats found %s %s %s %s", flow_stats.match.dl_src, type(flow_stats.match.dl_src), \
+    # host_switch_pair[flow_stats.match.dl_src],  event.connection.dpid)
+    if host_switch_pair[flow_stats.match.dl_src] == event.connection.dpid:
+      #log.debug("Flow stats found ", flow_stats.match.dl_src, host_switch_pair[flow_stats.match.dl_src], event.connection.dpid)
+      # Only IP flows
+      if flow_stats.match.dl_type == 0x800:
+        print 'IP Matched'
+        flow_match5 = [flow_stats.match.nw_proto, flow_stats.match.nw_src, flow_stats.match.nw_dst, \
+                       flow_stats.match.tp_src, flow_stats.match.tp_dst]
+        for flow in flow_list:
+          if flow.match == flow_match5:
+            # TO DO -> handle timeouts, different switches etc.
+            # we want to take stats only from switch connected to host to avoid complications
+            flow.byte_count = flow_stats.byte_count
+            continue
+
+        # if no match for flow is found in flow list we add new instance
+        f = Flow()
+        f.proto = flow_stats.match.nw_proto # type of protocol [tcp/udp -> not 100% sure]
+        f.ip_src = flow_stats.match.nw_src
+        f.ip_dst = flow_stats.match.nw_dst
+        # ports of transport protocol [tcp/udp]
+        f.tp_src = flow_stats.match.tp_src
+        f.tp_dst = flow_stats.match.tp_dst
+
+        # to do -> how to do this?
+        f.switch_src = None # switch connected to ip_src host
+        f.switch_dst = None # switch connected to ip_dst host
+        f.path = None
+
+        f.byte_count = flow_stats.byte_count
+        flow_list.append(f)
 
 
 
