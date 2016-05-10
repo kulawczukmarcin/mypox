@@ -24,10 +24,10 @@ class MyTopo( Topo ):
         rightHost = self.addHost( 'h2', ip='10.233.2.1'  )
         leftSwitch = self.addSwitch( 's1' )
         rightSwitch = self.addSwitch( 's2' )
-	midSwitch = self.addSwitch( 's3' )
-	uplSwitch = self.addSwitch( 's4' )
-	uprSwitch = self.addSwitch( 's5' )
-	
+        midSwitch = self.addSwitch( 's3' )
+        uplSwitch = self.addSwitch( 's4' )
+        uprSwitch = self.addSwitch( 's5' )
+
 	
 
         # Add links
@@ -35,9 +35,9 @@ class MyTopo( Topo ):
         self.addLink( leftSwitch, midSwitch )
         self.addLink( midSwitch, rightSwitch )
         self.addLink( rightSwitch, rightHost )
-	self.addLink( rightSwitch, uprSwitch )
-	self.addLink( leftSwitch, uplSwitch )
-	self.addLink( uprSwitch, uplSwitch )
+        self.addLink( rightSwitch, uprSwitch )
+        self.addLink( leftSwitch, uplSwitch )
+        self.addLink( uprSwitch, uplSwitch )
 
 
 topos = { 'mytopo': ( lambda: MyTopo() ) }

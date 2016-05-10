@@ -9,6 +9,7 @@ zbieranie statystyk
 ./pox.py openflow.discovery forwarding.my_topo_proactive misc.my_flow_stats
 # zeby wyswietlalo na poziomie debug
 ./pox.py openflow.discovery forwarding.my_topo_proactive misc.my_flow_stats log.level --DEBUG
+./pox.py openflow.discovery forwarding.my_l2_multi misc.my_flow_stats log.level --DEBUG
 
 
 (tego polecenia używamy na maszynce, ale lepiej odpoalić przez ssh)

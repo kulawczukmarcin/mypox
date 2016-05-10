@@ -40,7 +40,6 @@ flow_list = [] # list of all flows
 #host_switch_pair = defaultdict(lambda:None)
 
 class Flow:
-
   def __init__ (self):
     self.proto = None # type of protocol [tcp/udp -> not 100% sure]
     self.ip_src = None
@@ -88,22 +87,27 @@ def get_paths():
 # it will send them here to be applied for paths,
 # stats here are bytes sent by this port
 def apply_stats_to_paths(switch, port, stats):
-  global paths
-  log.debug("Checking switch %s port %s ", switch, port )
-  for src in sws.values():
-    for dst in sws.values():
-      for path in paths[src][dst]:
-        for switch_port_pair in path:
-          #log.debug("switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[1] )
-          if switch == dpidToStr(switch_port_pair[0].dpid) and port == switch_port_pair[1]:
-            # log.debug("switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[1] )
-            # log.debug(path)
-            # switch_port_pair.append(stats) -> this isn't working, what is better?
-            # to do -> how append stats?
-            # print stats
-            pass
-
-
+  # global paths
+  # log.debug("Checking switch %s port %s ", switch, port )
+  # for src in sws.values():
+  #   for dst in sws.values():
+  #     for path in paths[src][dst]:
+  #       for switch_port_pair in path:
+  #         #log.debug("switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[1] )
+  #         if switch == dpidToStr(switch_port_pair[0].dpid) and port == switch_port_pair[1]:
+  #           # log.debug("switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[1] )
+  #           # log.debug(path)
+  #           # switch_port_pair.append(stats) -> this isn't working, what is better?
+  #           # to do -> how append stats?
+  #           # print stats
+  #           pass
+  from pox.forwarding.my_l2_multi import CookedPath
+  for cookedpathobj in CookedPath:
+    for switch_port_pair in cookedpathobj.cooked_path:
+       if switch == dpidToStr(switch_port_pair[0].dpid) and port == switch_port_pair[1]:
+          cookedpathobj.bytes_sent_list[cookedpathobj.cooked_path.index(switch_port_pair)] = stats
+          log.debug("Switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[1] )
+          log.debug("Bytes sent list: %s",cookedpathobj.bytes_sent_list)
 
 # handler for timer function that sends the requests to all the
 # switches connected to the controller.
@@ -126,6 +130,8 @@ def _handle_flowstats_received (event):
 
     # We want to gather stats for flow only in switch connected to src host
     # to avoid duplication
+
+    # ALL THIS HAS TO BE CHECK YET !!! - > no duplications, add flow deleting after some time, etc.
     #log.debug("Flow stats found %s %s %s %s", flow_stats.match.dl_src, type(flow_stats.match.dl_src), \
     # host_switch_pair[flow_stats.match.dl_src],  event.connection.dpid)
     if host_switch_pair[flow_stats.match.dl_src] == event.connection.dpid:

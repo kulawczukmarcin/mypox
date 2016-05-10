@@ -139,6 +139,11 @@ def _calc_paths ():
     for dst in sws:
       for path in all_raw_paths[src][dst]:
         all_cooked_paths[src][dst].append(_get_multipath (src, dst, path))
+        px = CookedPath()
+        px.switch_src = src
+        px.switch_dst = dst
+        px.cooked_path = _get_multipath (src, dst, path)
+        px.bytes_sent_list = [0]*len(px.cooked_path)
 
 
 
@@ -256,6 +261,29 @@ def _get_path (src, dst, first_port, final_port):
 
   return r
 
+# this class is needed to iterate through CookedPath class
+class IterRegistry(type):
+    def __iter__(cls):
+        return iter(cls._registry)
+
+class CookedPath:
+  __metaclass__ = IterRegistry # We need that meta class...
+  _registry = []
+  # cooked path -- a list of (node,in_port,out_port)
+  # all of them are kept in all_cooked_path dict but for stats reason we want to have class as well
+  def __init__(self):
+    self.switch_src = None
+    self.switch_dst = None
+    self.cooked_path = None
+    # bytes sent is a list of bytes sent by each port one by one
+    self.bytes_sent_list = []
+    self.path_coefficient = None
+
+    self._registry.append(self)
+
+  @classmethod
+  def classiter(cls): # iterate over class by giving all instances which have been instantiated
+    return iter(cls.cooked_path.values())
 
 class WaitingPath (object):
   """
