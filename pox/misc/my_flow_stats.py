@@ -52,6 +52,7 @@ class Flow:
     self.switch_dst = None # switch connected to ip_dst host
     self.path = None
     self.byte_count = None
+    self.byte_diff = None
 
 
 # get paths from my_l2_multi module
@@ -105,9 +106,14 @@ def apply_stats_to_paths(switch, port, stats):
   for cookedpathobj in CookedPath:
     for switch_port_pair in cookedpathobj.cooked_path:
        if switch == dpidToStr(switch_port_pair[0].dpid) and port == switch_port_pair[1]:
-          cookedpathobj.bytes_sent_list[cookedpathobj.cooked_path.index(switch_port_pair)] = stats
-          log.debug("Switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[1] )
-          log.debug("Bytes sent list: %s",cookedpathobj.bytes_sent_list)
+          cookedpathobj.bytes_diff_list[cookedpathobj.cooked_path.index(switch_port_pair)] = \
+            stats - cookedpathobj.bytes_diff_list[cookedpathobj.cooked_path.index(switch_port_pair)]
+          log.debug("Switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[1])
+          log.debug("Bytes sent overall: %s", stats)
+          log.debug("Path: %s", cookedpathobj.cooked_path)
+          log.debug("Bytes diff list: %s", cookedpathobj.bytes_diff_list)
+          cookedpathobj.path_coefficient = min(cookedpathobj.bytes_diff_list)
+          log.debug("Path coeff: %s", cookedpathobj.path_coefficient)
 
 # handler for timer function that sends the requests to all the
 # switches connected to the controller.
@@ -135,7 +141,7 @@ def _handle_flowstats_received (event):
     #log.debug("Flow stats found %s %s %s %s", flow_stats.match.dl_src, type(flow_stats.match.dl_src), \
     # host_switch_pair[flow_stats.match.dl_src],  event.connection.dpid)
     if host_switch_pair[flow_stats.match.dl_src] == event.connection.dpid:
-      #log.debug("Flow stats found ", flow_stats.match.dl_src, host_switch_pair[flow_stats.match.dl_src], event.connection.dpid)
+      # log.debug("Flow stats found ", flow_stats.match.dl_src, host_switch_pair[flow_stats.match.dl_src], event.connection.dpid)
       # Only IP flows
       if flow_stats.match.dl_type == 0x800:
         print 'IP Matched'
@@ -145,6 +151,7 @@ def _handle_flowstats_received (event):
           if flow.match == flow_match5:
             # TO DO -> handle timeouts, different switches etc.
             # we want to take stats only from switch connected to host to avoid complications
+            flow.byte_diff = flow.byte_count - flow_stats.byte_count
             flow.byte_count = flow_stats.byte_count
             continue
 

@@ -1,3 +1,14 @@
+Zdaje się że najnowsza wersja działa tak:
+mininet:
+uruchamiamy maszynke z mininetem z /home/marcin/SDN/VirtualBox VMs/Mininet-VM [najlepiej przez VirtualBoxa]
+ssh mininet@10.127.194.169
+sudo mn --topo=tree,3 --controller=remote,10.185.205.59
+trzeba będzie zrobić ładny skrypt w mininecie
+
+pox:
+cd SDN/mypox
+./pox.py openflow.discovery forwarding.my_l2_multi misc.my_flow_stats log.level --DEBUG
+
 Odpalanie kontrolera
 cd mgr/pox
 # przykladowy zwykly l2

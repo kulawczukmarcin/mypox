@@ -139,11 +139,13 @@ def _calc_paths ():
     for dst in sws:
       for path in all_raw_paths[src][dst]:
         all_cooked_paths[src][dst].append(_get_multipath (src, dst, path))
-        px = CookedPath()
-        px.switch_src = src
-        px.switch_dst = dst
-        px.cooked_path = _get_multipath (src, dst, path)
-        px.bytes_sent_list = [0]*len(px.cooked_path)
+        px = CookedPath(src, dst, _get_multipath (src, dst, path))
+
+        # We rather define this inside class defintion
+        #px.switch_src = src
+        #px.switch_dst = dst
+        #px.cooked_path = _get_multipath (src, dst, path)
+        #px.bytes_sent_list = [0]*len(px.cooked_path)
 
 
 
@@ -271,12 +273,12 @@ class CookedPath:
   _registry = []
   # cooked path -- a list of (node,in_port,out_port)
   # all of them are kept in all_cooked_path dict but for stats reason we want to have class as well
-  def __init__(self):
-    self.switch_src = None
-    self.switch_dst = None
-    self.cooked_path = None
+  def __init__(self, src, dst, cookedpath):
+    self.switch_src = src
+    self.switch_dst = dst
+    self.cooked_path = cookedpath
     # bytes sent is a list of bytes sent by each port one by one
-    self.bytes_sent_list = []
+    self.bytes_diff_list = [0]*len(cookedpath)
     self.path_coefficient = None
 
     self._registry.append(self)
