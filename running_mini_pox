@@ -9,6 +9,8 @@ pox:
 cd SDN/mypox
 ./pox.py openflow.discovery forwarding.my_l2_multi misc.my_flow_stats log.level --DEBUG
 
+
+
 Odpalanie kontrolera
 cd mgr/pox
 # przykladowy zwykly l2

@@ -33,6 +33,7 @@ from collections import defaultdict
 # include as part of the betta branch
 from pox.openflow.of_json import *
 
+time_period = 5 # time between stats requests
 paths = defaultdict(lambda:defaultdict(lambda:[]))
 log = core.getLogger()
 sws = {} # switches
@@ -198,6 +199,25 @@ def _handle_portstats_received (event):
       apply_stats_to_paths(dpidToStr(event.connection.dpid), f.port_no, f.tx_bytes)
 
 
+def find_best_path(src, dst):
+  best_path_coeff = None
+  best_path = None
+  from pox.forwarding.my_l2_multi import CookedPath
+  for cookedpathobj in CookedPath:
+    if cookedpathobj.switch_src == src and cookedpathobj.switch_dst == dst:
+      if best_path_coeff == None:
+        best_path_coeff = cookedpathobj.path_coefficient
+        best_path = cookedpathobj.cooked_path
+        log.debug("Best path: %s", best_path)
+      elif cookedpathobj.path_coefficient < best_path_coeff:
+        best_path_coeff = cookedpathobj.path_coefficient
+        best_path = cookedpathobj.cooked_path
+        log.debug("Best path: %s", best_path)
+  return best_path
+
+
+
+
 # main functiont to launch the module
 def launch ():
   from pox.lib.recoco import Timer
@@ -209,4 +229,4 @@ def launch ():
     _handle_portstats_received)
 
   # timer set to execute every five seconds
-  Timer(5, _timer_func, recurring=True)
+  Timer(time_period, _timer_func, recurring=True)
