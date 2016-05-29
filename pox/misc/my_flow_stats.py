@@ -89,15 +89,15 @@ def apply_stats_to_paths(switch, port, stats):
   from pox.forwarding.my_l2_multi import CookedPath
   for cookedpathobj in CookedPath:
     for switch_port_pair in cookedpathobj.cooked_path:
-       if switch == dpidToStr(switch_port_pair[0].dpid) and port == switch_port_pair[1]:
+       if switch == dpidToStr(switch_port_pair[0].dpid) and port == switch_port_pair[2]:
           cookedpathobj.bytes_diff_list[cookedpathobj.cooked_path.index(switch_port_pair)] = \
             stats - cookedpathobj.bytes_diff_list[cookedpathobj.cooked_path.index(switch_port_pair)]
-          # log.debug("Switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[1])
-          # log.debug("Bytes sent overall: %s", stats)
-          # log.debug("Path: %s", cookedpathobj.cooked_path)
-          # log.debug("Bytes diff list: %s", cookedpathobj.bytes_diff_list)
-          cookedpathobj.path_coefficient = max(cookedpathobj.bytes_diff_list)
-          #log.debug("Path coeff: %s", cookedpathobj.path_coefficient)
+          log.debug("Switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[2])
+          log.debug("Bytes sent overall: %s", stats)
+          log.debug("Path: %s", cookedpathobj.cooked_path)
+          log.debug("Bytes diff list: %s", cookedpathobj.bytes_diff_list)
+          cookedpathobj.path_coefficient = max(cookedpathobj.bytes_diff_list[:-1])
+          log.debug("Path coeff: %s", cookedpathobj.path_coefficient)
 
 # handler for timer function that sends the requests to all the
 # switches connected to the controller.
@@ -118,11 +118,10 @@ def _handle_flowstats_received (event):
     # log.debug("Bytes in flow match%s: %s",
     #   flow_stats.match, flow_stats.byte_count)
 
+    # ALL THIS HAS TO BE CHECK YET !!! - > no duplications, add flow deleting after some time, etc.
     # We want to gather stats for flow only in switch connected to src host
     # to avoid duplication
-
-    # ALL THIS HAS TO BE CHECK YET !!! - > no duplications, add flow deleting after some time, etc.
-    if host_switch_pair[flow_stats.match.dl_src] == event.connection.dpid:
+    if host_switch_pair[flow_stats.match.dl_src][0] == event.connection.dpid:
       # log.debug("Flow stats found ", flow_stats.match.dl_src, host_switch_pair[flow_stats.match.dl_src], event.connection.dpid)
       # Only IP flows
       if flow_stats.match.dl_type == 0x800:
@@ -144,7 +143,11 @@ def _handle_flowstats_received (event):
 
             if flow.byte_diff/time_period*8 > 5000:
               log.debug("Uuuuuu, found big flow!")
-              find_best_path(flow.switch_src, flow.switch_dst)
+              print flow.switch_src, flow.switch_dst
+              best_path = find_best_path(flow.switch_src, flow.switch_dst)
+              if best_path != flow.path:
+                print "Path of big flow is not the best path!"
+                print best_path,"\n", flow.path
             break
 
 
@@ -168,11 +171,11 @@ def find_best_path(src, dst):
       if best_path_coeff == None:
         best_path_coeff = cookedpathobj.path_coefficient
         best_path = cookedpathobj.cooked_path
-        log.debug("Best path: %s", best_path)
+        log.debug("Best path: %s, coeff: %s", best_path, best_path_coeff)
       elif cookedpathobj.path_coefficient < best_path_coeff:
         best_path_coeff = cookedpathobj.path_coefficient
         best_path = cookedpathobj.cooked_path
-        log.debug("Best path: %s", best_path)
+        log.debug("Best path: %s, coeff: %s", best_path, best_path_coeff)
   return best_path
 
 

@@ -3,6 +3,8 @@ mininet:
 uruchamiamy maszynke z mininetem z /home/marcin/SDN/VirtualBox VMs/Mininet-VM [najlepiej przez VirtualBoxa]
 ssh mininet@10.127.194.169
 sudo mn --topo=tree,3 --controller=remote,10.185.205.59
+ze statystykami
+sudo mn --topo=tree,3 --controller=remote,10.185.205.59 --link tc,bw=1,delay=10ms
 trzeba będzie zrobić ładny skrypt w mininecie
 
 pox:

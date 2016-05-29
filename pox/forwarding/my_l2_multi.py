@@ -48,6 +48,9 @@ switches = {}
 # ethaddr -> (switch, port)
 mac_map = {}
 
+# Hosts macs
+hosts = set([])
+
 # [sw1][sw2] -> (distance, intermediate)
 path_map = defaultdict(lambda:defaultdict(lambda:(None,None))) # shortest paths
 # [sw1][sw2] -> [paths as (distance, intermediate)]
@@ -150,15 +153,41 @@ def _calc_paths ():
             all_raw_paths[src][dst].remove(path)
             break
 
-  # Get all cooked paths -- a list of (node,out_port)
+  # Get all cooked paths -- a list of (node,, in_port, out_port)
+  # We only want paths "from host to host"
   all_cooked_paths.clear()
-  for src in sws:
-    for dst in sws:
-      for path in all_raw_paths[src][dst]:
-        all_cooked_paths[src][dst].append(_get_multipath (src, dst, path))
-        px = CookedPath(src, dst, _get_multipath (src, dst, path))
+  for host_src in hosts:
+    for host_dst in hosts:
+      src = switches[host_switch_pair[host_src][0]]
+      src_port = host_switch_pair[host_src][1]
+      dst = switches[host_switch_pair[host_dst][0]]
+      dst_port = host_switch_pair[host_dst][1]
+      if src != dst:
+        for path in all_raw_paths[src][dst]:
+          log.debug("Path from %s, to %s: %s", src, dst, path)
+          cookedpath = _get_multipath(src, dst, path, src_port, dst_port)
+          if cookedpath != None:
+            px = CookedPath(src, dst, cookedpath, src_port, dst_port)
+            all_cooked_paths[src][dst].append(cookedpath)
 
-        # We rather define this inside class defintion
+
+
+  # just a buckup!!!
+  # all_cooked_paths.clear()
+  # for src in sws:
+  #   for dst in sws:
+  #     for path in all_raw_paths[src][dst]:
+  #       for first_port_ in src.ports:
+  #         for final_port_ in dst.ports:
+  #           if first_port_.port_no != 65534 and  final_port_.port_no != 65534:
+  #             cookedpath = _get_multipath (src, dst, path, first_port_.port_no, final_port_.port_no)
+  #             if cookedpath != None:
+  #               px = CookedPath(src, dst, cookedpath, first_port_.port_no, final_port_.port_no)
+  #               all_cooked_paths[src][dst].append(cookedpath)
+
+
+
+              # We rather define this inside class defintion
         #px.switch_src = src
         #px.switch_dst = dst
         #px.cooked_path = _get_multipath (src, dst, path)
@@ -180,7 +209,8 @@ def _calc_paths ():
   # for i in sws:
   #   for j in sws:
   #     print i, j, all_raw_paths[i][j]
-
+  #
+  # print "hosts", hosts
   # print ("\nWe print ALL cooked paths")
   # for i in sws:
   #   for j in sws:
@@ -202,7 +232,7 @@ def _get_raw_multipath (src, dst, intermediate):
   return _get_raw_path(src, intermediate) + [intermediate] + \
          _get_raw_path(intermediate, dst)
 
-def _get_multipath (src, dst, path):
+def _get_multipath (src, dst, path, first_port, final_port):
   """
   Gets a cooked path -- a list of (node,out_port)
   Multipath version
@@ -216,11 +246,14 @@ def _get_multipath (src, dst, path):
 
   # Now add the ports
   r = []
+  in_port = first_port
   for s1,s2 in zip(path[:-1],path[1:]):
     out_port = adjacency[s1][s2]
-    r.append((s1,out_port))
+    if in_port == out_port:
+      return None
+    r.append((s1,in_port, out_port))
     in_port = adjacency[s2][s1]
-
+  r.append((dst, in_port, final_port))
   return r
 
 def _get_raw_path (src, dst):
@@ -290,10 +323,12 @@ class CookedPath:
   _registry = []
   # cooked path -- a list of (node,in_port,out_port)
   # all of them are kept in all_cooked_path dict but for stats reason we want to have class as well
-  def __init__(self, src, dst, cookedpath):
+  def __init__(self, src, dst, cookedpath, first_port, final_port):
     self.switch_src = src
     self.switch_dst = dst
     self.cooked_path = cookedpath
+    self.first_port = first_port
+    self.final_port = final_port
     # bytes sent is a list of bytes sent by each port one by one
     self.bytes_diff_list = [0]*len(cookedpath)
     self.path_coefficient = None
@@ -535,8 +570,10 @@ class Switch (EventMixin):
 
 
     if packet.dst.is_multicast:
-      log.debug("Flood multicast from %s", packet.src)
+      # CAN I DO THAT????!!!- >mk
+      #log.debug("Flood multicast from %s", packet.src)
       flood()
+      pass
     else:
       if packet.dst not in mac_map:
         log.debug("%s unknown -- flooding" % (packet.dst,))
@@ -593,8 +630,9 @@ class l2_multi (EventMixin):
   def _handle_HostEvent (self, event):
     """ Here is the place where is used the listener"""
     print "Switch dpid, switchport and host mac...", event.entry
-    host_switch_pair[event.entry.macaddr] = event.entry.dpid
+    host_switch_pair[event.entry.macaddr] = [event.entry.dpid, event.entry.port]
     print type(event.entry.macaddr), event.entry.macaddr, host_switch_pair[event.entry.macaddr]
+    hosts.add(event.entry.macaddr)
 
 
   def _handle_LinkEvent (self, event):
