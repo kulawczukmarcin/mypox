@@ -73,6 +73,23 @@ FLOW_HARD_TIMEOUT = 30
 # How long is allowable to set up a path?
 PATH_SETUP_TIME = 4
 
+flow_list = [] # list of all flows
+
+class Flow:
+  def __init__ (self):
+    self.proto = None # type of protocol [tcp/udp -> not 100% sure]
+    self.ip_src = None
+    self.ip_dst = None
+    # ports of transport protocol [tcp/udp]
+    self.tp_src = None
+    self.tp_dst = None
+    self.match = [self.proto, self.ip_src, self.ip_dst, self.tp_src, self.tp_dst]
+    self.switch_src = None # switch connected to ip_src host
+    self.switch_dst = None # switch connected to ip_dst host
+    self.path = None
+    self.byte_count = None
+    self.byte_diff = None
+
 
 def _calc_paths ():
   """
@@ -434,8 +451,27 @@ class Switch (EventMixin):
 
     # Now reverse it and install it backwards
     # (we'll just assume that will work)
-    p = [(sw,out_port,in_port) for sw,in_port,out_port in p]
-    self._install_path(p, match.flip())
+    #p = [(sw,out_port,in_port) for sw,in_port,out_port in p]
+    #self._install_path(p, match.flip())
+
+    # here comes my part for new flow
+    if match.dl_type == 0x800:
+      print 'IP Matched'
+      f = Flow()
+      f.proto = match.nw_proto  # type of protocol [tcp/udp -> not 100% sure]
+      f.ip_src = match.nw_src
+      f.ip_dst = match.nw_dst
+      # ports of transport protocol [tcp/udp]
+      f.tp_src = match.tp_src
+      f.tp_dst = match.tp_dst
+      # match 5
+      f.match = [f.proto, f.ip_src, f.ip_dst, f.tp_src, f.tp_dst]
+      f.switch_src = self  # switch connected to ip_src host
+      f.switch_dst = dst_sw  # switch connected to ip_dst host
+      f.path = p
+      f.byte_count = 0
+
+      flow_list.append(f)
 
 
   def _handle_PacketIn (self, event):
