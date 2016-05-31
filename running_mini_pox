@@ -3,8 +3,9 @@ mininet:
 uruchamiamy maszynke z mininetem z /home/marcin/SDN/VirtualBox VMs/Mininet-VM [najlepiej przez VirtualBoxa]
 ssh mininet@10.127.194.169
 sudo mn --topo=tree,3 --controller=remote,10.185.205.59
-ze statystykami
-sudo mn --topo=tree,3 --controller=remote,10.185.205.59 --link tc,bw=1,delay=10ms
+ze ustawioną przepustowością
+sudo mn --topo=tree,3 --controller=remote,10.185.205.59 --link tc,bw=10,delay=10ms
+sudo mn --custom ~/mininet/custom/topo-5sw-2host.py --topo mytopo --controller=remote,10.185.205.59 --link tc,bw=1,delay=10ms --mac
 trzeba będzie zrobić ładny skrypt w mininecie
 
 pox:
@@ -49,4 +50,13 @@ sudo python proactive_net.py
 
 running script from local machine to ssh (to nie działa niestety tak jak trzeba..._
 sudo cat proactive_net.py | ssh -X mininet@192.168.56.101 sudo python -
+
+
+iperfy
+s2 sudo wireshark &
+h1 iperf -s -p 666 &
+h2 iperf  -c h1 -p 666 -t 15
+
+flow tables
+mininet@mininet-vm:~$ sudo ovs-ofctl dump-flows s1
 

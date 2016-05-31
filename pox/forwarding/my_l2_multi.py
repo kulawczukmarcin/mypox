@@ -86,12 +86,14 @@ class Flow:
     # ports of transport protocol [tcp/udp]
     self.tp_src = None
     self.tp_dst = None
-    self.match = [self.proto, self.ip_src, self.ip_dst, self.tp_src, self.tp_dst]
+    self.match5 = [self.proto, self.ip_src, self.ip_dst, self.tp_src, self.tp_dst]
+    self.match = None
     self.switch_src = None # switch connected to ip_src host
     self.switch_dst = None # switch connected to ip_dst host
     self.path = None
     self.byte_count = None
     self.byte_diff = None
+    self.changed = 0 # if the flow has already changed path
 
 
 def _calc_paths ():
@@ -416,6 +418,16 @@ class Switch (EventMixin):
   def __repr__ (self):
     return dpid_to_str(self.dpid)
 
+  def delete_path(self, p, match):
+    for sw,in_port,out_port in p:
+      msg = of.ofp_flow_mod()
+      msg.match = match
+      msg.match.in_port = in_port
+      msg.actions.append(of.ofp_action_output(port=out_port))
+      msg.command = of.OFPFC_DELETE
+      msg = of.ofp_barrier_request()
+      sw.connection.send(msg)
+
   def _install (self, switch, in_port, out_port, match, buf = None):
     msg = of.ofp_flow_mod()
     msg.match = match
@@ -500,7 +512,8 @@ class Switch (EventMixin):
       f.tp_src = match.tp_src
       f.tp_dst = match.tp_dst
       # match 5
-      f.match = [f.proto, f.ip_src, f.ip_dst, f.tp_src, f.tp_dst]
+      f.match5 = [f.proto, f.ip_src, f.ip_dst, f.tp_src, f.tp_dst]
+      f.match = match
       f.switch_src = self  # switch connected to ip_src host
       f.switch_dst = dst_sw  # switch connected to ip_dst host
       f.path = p

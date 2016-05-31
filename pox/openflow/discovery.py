@@ -339,7 +339,7 @@ class Discovery (EventMixin):
 
     if self._explicit_drop:
       if event.ofp.buffer_id is not None:
-        log.debug("Dropping LLDP packet %i", event.ofp.buffer_id)
+        #log.debug("Dropping LLDP packet %i", event.ofp.buffer_id)
         msg = of.ofp_packet_out()
         msg.buffer_id = event.ofp.buffer_id
         msg.in_port = event.port

@@ -33,11 +33,15 @@ from collections import defaultdict
 # include as part of the betta branch
 from pox.openflow.of_json import *
 
+from pox.forwarding.my_l2_multi import Switch
+
+
 time_period = 5 # time between stats requests
 paths = defaultdict(lambda:defaultdict(lambda:[]))
 log = core.getLogger()
 sws = {} # switches
 #host_switch_pair = defaultdict(lambda:None)
+
 
 # get paths from my_l2_multi module
 def get_paths():
@@ -92,12 +96,12 @@ def apply_stats_to_paths(switch, port, stats):
        if switch == dpidToStr(switch_port_pair[0].dpid) and port == switch_port_pair[2]:
           cookedpathobj.bytes_diff_list[cookedpathobj.cooked_path.index(switch_port_pair)] = \
             stats - cookedpathobj.bytes_diff_list[cookedpathobj.cooked_path.index(switch_port_pair)]
-          log.debug("Switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[2])
-          log.debug("Bytes sent overall: %s", stats)
+          # log.debug("Switch-port pair %s, %s", dpidToStr(switch_port_pair[0].dpid), switch_port_pair[2])
+          # log.debug("Bytes sent overall: %s", stats)
           log.debug("Path: %s", cookedpathobj.cooked_path)
           log.debug("Bytes diff list: %s", cookedpathobj.bytes_diff_list)
           cookedpathobj.path_coefficient = max(cookedpathobj.bytes_diff_list[:-1])
-          log.debug("Path coeff: %s", cookedpathobj.path_coefficient)
+          # log.debug("Path coeff: %s", cookedpathobj.path_coefficient)
 
 # handler for timer function that sends the requests to all the
 # switches connected to the controller.
@@ -132,8 +136,10 @@ def _handle_flowstats_received (event):
         for flow in flow_list:
           #print "Flow match stat", flow_match5
           #print "Flow match List", flow.match, "\n"
-          if flow.match == flow_match5:
+          if flow.match5 == flow_match5:
             log.debug("Flow 5 Match found")
+            if flow.changed == 1:
+              break # we only change path once
             # TO DO -> handle timeouts, different switches etc.
             # we want to take stats only from switch connected to host to avoid complications
             flow.byte_diff = flow_stats.byte_count - flow.byte_count
@@ -142,12 +148,18 @@ def _handle_flowstats_received (event):
             flow.byte_count = flow_stats.byte_count
 
             if flow.byte_diff/time_period*8 > 5000:
-              log.debug("Uuuuuu, found big flow!")
+              log.debug("Uuuuuu, found big flow! %s", flow.match)
               print flow.switch_src, flow.switch_dst
               best_path = find_best_path(flow.switch_src, flow.switch_dst)
-              if best_path != flow.path:
+              print "best path, flow path"
+              print best_path, "\n", flow.path
+              if best_path != flow.path and best_path is not None:
                 print "Path of big flow is not the best path!"
-                print best_path,"\n", flow.path
+                Switch.delete_path(sws[event.connection.dpid], flow.path, flow.match)
+                Switch._install_path(sws[event.connection.dpid], best_path, flow.match)
+                flow.path = best_path
+                flow.changed = 1
+
             break
 
 
@@ -168,7 +180,7 @@ def find_best_path(src, dst):
   from pox.forwarding.my_l2_multi import CookedPath
   for cookedpathobj in CookedPath:
     if cookedpathobj.switch_src == src and cookedpathobj.switch_dst == dst:
-      if best_path_coeff == None:
+      if best_path_coeff is None:
         best_path_coeff = cookedpathobj.path_coefficient
         best_path = cookedpathobj.cooked_path
         log.debug("Best path: %s, coeff: %s", best_path, best_path_coeff)
