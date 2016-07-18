@@ -147,11 +147,11 @@ def _handle_flowstats_received (event):
                       flow_stats.byte_count, flow.byte_count,  flow.byte_diff, flow.byte_diff/time_period*8)
             flow.byte_count = flow_stats.byte_count
 
-            if flow.byte_diff/time_period*8 > 5000:
+            if flow.byte_diff/time_period*8 > 3000:
               log.debug("Uuuuuu, found big flow! %s", flow.match)
-              print flow.switch_src, flow.switch_dst
+              print "Sw src, sw dst: ", flow.switch_src, flow.switch_dst
               best_path = find_best_path(flow.switch_src, flow.switch_dst)
-              print "best path, flow path"
+              print "best path, flow path:"
               print best_path, "\n", flow.path
               if best_path != flow.path and best_path is not None:
                 print "Path of big flow is not the best path!"

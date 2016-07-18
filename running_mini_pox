@@ -1,14 +1,32 @@
 Zdaje się że najnowsza wersja działa tak:
 mininet:
 uruchamiamy maszynke z mininetem z /home/marcin/SDN/VirtualBox VMs/Mininet-VM [najlepiej przez VirtualBoxa]
-ssh mininet@10.127.194.169
-sudo mn --topo=tree,3 --controller=remote,10.185.205.59
+$ ssh -X mininet@192.168.56.101
+[jeżeli nie można spingować masznyny to sudo dhclient eth2, jak nie patrz notatka w Keep]
+
+skrytpy do minineta
+cd ~/mininet/custom
+sudo python topo_simple.py 192.168.56.1
+sudo python topo_simple_iperf_cmd.py 192.168.56.1
+
+pox [lokalnie]:
+cd SDN/mypox
+./pox.py openflow.discovery --eat-early-packets=True forwarding.my_l2_multi misc.my_flow_stats log.level --DEBUG host_tracker
+
+
+
+
+mininet:
+uruchamiamy maszynke z mininetem z /home/marcin/SDN/VirtualBox VMs/Mininet-VM [najlepiej przez VirtualBoxa]
+$ ssh -X mininet@192.168.56.101
+[jeżeli nie można spingować masznyny to sudo dhclient eth2, jak nie patrz notatka w Keep]
+sudo mn --topo=tree,3 --controller=remote,192.168.56.1
 ze ustawioną przepustowością
-sudo mn --topo=tree,3 --controller=remote,10.185.205.59 --link tc,bw=10,delay=10ms
-sudo mn --custom ~/mininet/custom/topo-5sw-2host.py --topo mytopo --controller=remote,10.185.205.59 --link tc,bw=1,delay=10ms --mac
+sudo mn --topo=tree,3 --controller=remote,192.168.56.1 --link tc,bw=10,delay=10ms
+sudo mn --custom ~/mininet/custom/topo-5sw-2host.py --topo mytopo --controller=remote,192.168.56.1 --link tc,bw=1,delay=10ms --mac
 trzeba będzie zrobić ładny skrypt w mininecie
 
-pox:
+pox [lokalnie]:
 cd SDN/mypox
 ./pox.py openflow.discovery forwarding.my_l2_multi misc.my_flow_stats log.level --DEBUG
 
