@@ -29,11 +29,12 @@ class MyTopo(Topo):
         upSwitch = self.addSwitch('s4')
 
         linkopts = dict(bw=10)
+        linkoptsh = dict(bw=100)
         # Add links
-        self.addLink(leftHost, leftSwitch)
+        self.addLink(leftHost, leftSwitch, **linkoptsh)
         self.addLink(leftSwitch, downSwitch, **linkopts)
         self.addLink(downSwitch, rightSwitch, **linkopts)
-        self.addLink(rightSwitch, rightHost)
+        self.addLink(rightSwitch, rightHost, **linkoptsh)
         self.addLink(rightSwitch, upSwitch, **linkopts)
         self.addLink(leftSwitch, upSwitch, **linkopts)
 
@@ -55,17 +56,17 @@ def run(controllers):
     s3.cmd("sudo wireshark &")
     s4.cmd("sudo wireshark &")
     h1.cmd("ping 10.0.0.2 -c 10 > logping.txt")
-    for i in range(7):
-        h2.cmd("iperf -s -p 500(%d) &" % i)
+    for i in range(9):
+        h2.cmd("iperf -s -u -p  500%s  -i 0.5 > logserverapp%s.txt &" % (i, i))
 
-    for i in range(6):
-        h1.cmd("iperf -c 10.0.0.2 -p 500%s -t 30 -u -b 1m -i 1 > log%s.txt &" % (i, i))
+    for i in range(8):
+        h1.cmd("iperf -c 10.0.0.2 -p 500%s -u -t 30 -b 1m -i 1 > log%s.txt &" % (i, i))
     # h1.cmd("iperf -c %s -p 5001 -t 5 > log0.txt" % h2.IP())
-    sleep(5)
-    h1.cmd("iperf -c 10.0.0.2 -p 5006 -t 30 -b 6m -i 1 > logele.txt &")
+    #    sleep(5)
+    h1.cmd("iperf -c 10.0.0.2 -p 5008 -u -t 30 -b 6m -i 1 > logele.txt &")
 
     sleep(30)
-    # CLI( net )
+    CLI(net)
     net.stop()
 
 

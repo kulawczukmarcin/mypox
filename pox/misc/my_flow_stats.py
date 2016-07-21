@@ -37,6 +37,7 @@ from pox.forwarding.my_l2_multi import Switch
 
 
 time_period = 5 # time between stats requests
+threshhold = 3000000 # = 3Mbit/s
 paths = defaultdict(lambda:defaultdict(lambda:[]))
 log = core.getLogger()
 sws = {} # switches
@@ -147,7 +148,7 @@ def _handle_flowstats_received (event):
                       flow_stats.byte_count, flow.byte_count,  flow.byte_diff, flow.byte_diff/time_period*8)
             flow.byte_count = flow_stats.byte_count
 
-            if flow.byte_diff/time_period*8 > 3000:
+            if flow.byte_diff/time_period*8 > threshhold:
               log.debug("Uuuuuu, found big flow! %s", flow.match)
               print "Sw src, sw dst: ", flow.switch_src, flow.switch_dst
               best_path = find_best_path(flow.switch_src, flow.switch_dst)
