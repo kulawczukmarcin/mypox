@@ -729,4 +729,4 @@ def launch ():
   core.registerNew(l2_multi)
 
   timeout = min(max(PATH_SETUP_TIME, 5) * 2, 15)
-  #Timer(timeout, WaitingPath.expire_waiting_paths, recurring=True)
+  Timer(timeout, WaitingPath.expire_waiting_paths, recurring=True)
