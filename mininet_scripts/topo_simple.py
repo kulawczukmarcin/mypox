@@ -29,13 +29,15 @@ class MyTopo(Topo):
         upSwitch = self.addSwitch('s4')
 
         linkopts = dict(bw=10)
+        linkoptsh = dict(bw=100)
         # Add links
-        self.addLink(leftHost, leftSwitch)
+        self.addLink(leftHost, leftSwitch, **linkoptsh)
         self.addLink(leftSwitch, downSwitch, **linkopts)
         self.addLink(downSwitch, rightSwitch, **linkopts)
-        self.addLink(rightSwitch, rightHost)
+        self.addLink(rightSwitch, rightHost, **linkoptsh)
         self.addLink(rightSwitch, upSwitch, **linkopts)
         self.addLink(leftSwitch, upSwitch, **linkopts)
+
 
 
 topos = {'mytopo': (lambda: MyTopo())}

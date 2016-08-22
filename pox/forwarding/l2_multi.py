@@ -68,7 +68,7 @@ def _calc_paths ():
   """
   Essentially Floyd-Warshall algorithm
   """
-
+  print "We looking for paths"
   def dump ():
     for i in sws:
       for j in sws:
@@ -299,6 +299,9 @@ class Switch (EventMixin):
         self.connection.send(msg)
 
       return
+    #
+    # if match.dl_type == 0x800:
+    #   print 'IP Matched'
 
     log.debug("Installing path for %s -> %s %04x (%i hops)",
         match.dl_src, match.dl_dst, match.dl_type, len(p))

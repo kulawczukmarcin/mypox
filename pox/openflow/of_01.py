@@ -182,9 +182,9 @@ def handle_ERROR_MSG (con, msg): #A
   e = con.ofnexus.raiseEventNoErrors(err)
   if e is None or e.halt != True:
     con.raiseEventNoErrors(err)
-  if err.should_log:
-    log.error(str(con) + " OpenFlow Error:\n" +
-              msg.show(str(con) + " Error: ").strip())
+  # if err.should_log:
+  #   log.error(str(con) + " OpenFlow Error:\n" +
+  #             msg.show(str(con) + " Error: ").strip())
 
 def handle_BARRIER (con, msg):
   e = con.ofnexus.raiseEventNoErrors(BarrierIn, con, msg)

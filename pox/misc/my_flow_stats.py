@@ -179,8 +179,12 @@ def find_best_path(src, dst):
   best_path_coeff = None
   best_path = None
   from pox.forwarding.my_l2_multi import CookedPath
+  print "Cooked paths:"
   for cookedpathobj in CookedPath:
     if cookedpathobj.switch_src == src and cookedpathobj.switch_dst == dst:
+      print cookedpathobj.cooked_path
+      print cookedpathobj.bytes_diff_list, cookedpathobj.path_coefficient
+
       if best_path_coeff is None:
         best_path_coeff = cookedpathobj.path_coefficient
         best_path = cookedpathobj.cooked_path

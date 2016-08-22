@@ -8,14 +8,27 @@ skrytpy do minineta
 cd ~/mininet/custom
 sudo python topo_simple.py 192.168.56.1
 sudo python topo_simple_iperf_cmd.py 192.168.56.1
+sudo python topo_pionier_iperf_wk_normal_100.py 192.168.56.1
 
 pox [lokalnie]:
 cd SDN/mypox
-./pox.py openflow.discovery --eat-early-packets=True forwarding.my_l2_multi misc.my_flow_stats log.level --DEBUG host_tracker
+./pox.py openflow.spanning_tree openflow.discovery --eat-early-packets=True forwarding.my_l2_multi misc.my_flow_stats host_tracker
+./pox.py openflow.spanning_tree openflow.discovery --eat-early-packets=True forwarding.l2_multi host_tracker
+
+spanning_tree jest potrzbne do radzenia sobie z ztoplogiami z pętlami
+
+FIXY:
+w openflow.discovery zmieniono  _link_timeout = 10000, żeby za często nie wywalało linków i nie szukało od nowa ścieżek,
+przy tym trzeba było zmienić
+def send_cycle_time (self):
+    return self._timeout_check_period
+bo było za duże teraz
+
+do tego skomentowano errory openflow, bo wyskakwiało OFPBRC_BUFFER_UNKNOWN, co raczej nie szkodziło, a przeszkadzało zcytać logi
 
 
 
-
+##########################################
 mininet:
 uruchamiamy maszynke z mininetem z /home/marcin/SDN/VirtualBox VMs/Mininet-VM [najlepiej przez VirtualBoxa]
 $ ssh -X mininet@192.168.56.101

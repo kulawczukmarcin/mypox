@@ -503,7 +503,7 @@ class Switch (EventMixin):
 
     # here comes my part for new flow
     if match.dl_type == 0x800:
-      print 'IP Matched'
+      #print 'IP Matched'
       f = Flow()
       f.proto = match.nw_proto  # type of protocol [tcp/udp -> not 100% sure]
       f.ip_src = match.nw_src
@@ -724,9 +724,9 @@ class l2_multi (EventMixin):
 
 
 def launch ():
-  from pox.host_tracker import launch
-  launch()
+  #from pox.host_tracker import launch
+  #launch()
   core.registerNew(l2_multi)
 
   timeout = min(max(PATH_SETUP_TIME, 5) * 2, 15)
-  Timer(timeout, WaitingPath.expire_waiting_paths, recurring=True)
+  #Timer(timeout, WaitingPath.expire_waiting_paths, recurring=True)
