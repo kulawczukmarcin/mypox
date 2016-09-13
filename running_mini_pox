@@ -1,4 +1,3 @@
-Zdaje się że najnowsza wersja działa tak:
 mininet:
 uruchamiamy maszynke z mininetem z /home/marcin/SDN/VirtualBox VMs/Mininet-VM [najlepiej przez VirtualBoxa]
 $ ssh -X mininet@192.168.56.101
@@ -15,79 +14,6 @@ cd SDN/mypox
 ./pox.py openflow.spanning_tree openflow.discovery --eat-early-packets=True forwarding.my_l2_multi misc.my_flow_stats host_tracker
 ./pox.py openflow.spanning_tree openflow.discovery --eat-early-packets=True forwarding.l2_multi host_tracker
 
-spanning_tree jest potrzbne do radzenia sobie z ztoplogiami z pętlami
+spanning_tree jest potrzbne do radzenia sobie z z toplogiami z pętlami
 
-FIXY:
-w openflow.discovery zmieniono  _link_timeout = 10000, żeby za często nie wywalało linków i nie szukało od nowa ścieżek,
-przy tym trzeba było zmienić
-def send_cycle_time (self):
-    return self._timeout_check_period
-bo było za duże teraz
-
-do tego skomentowano errory openflow, bo wyskakwiało OFPBRC_BUFFER_UNKNOWN, co raczej nie szkodziło, a przeszkadzało zcytać logi
-
-
-
-##########################################
-mininet:
-uruchamiamy maszynke z mininetem z /home/marcin/SDN/VirtualBox VMs/Mininet-VM [najlepiej przez VirtualBoxa]
-$ ssh -X mininet@192.168.56.101
-[jeżeli nie można spingować masznyny to sudo dhclient eth2, jak nie patrz notatka w Keep]
-sudo mn --topo=tree,3 --controller=remote,192.168.56.1
-ze ustawioną przepustowością
-sudo mn --topo=tree,3 --controller=remote,192.168.56.1 --link tc,bw=10,delay=10ms
-sudo mn --custom ~/mininet/custom/topo-5sw-2host.py --topo mytopo --controller=remote,192.168.56.1 --link tc,bw=1,delay=10ms --mac
-trzeba będzie zrobić ładny skrypt w mininecie
-
-pox [lokalnie]:
-cd SDN/mypox
-./pox.py openflow.discovery forwarding.my_l2_multi misc.my_flow_stats log.level --DEBUG
-
-
-
-Odpalanie kontrolera
-cd mgr/pox
-# przykladowy zwykly l2
-./pox.py openflow.discovery forwarding.l2_multi log --no-default
-# moj proactive z wyszukiwaniem sciezek
-./pox.py openflow.discovery forwarding.my_topo_proactive log --no-default
-
-zbieranie statystyk
-./pox.py openflow.discovery forwarding.my_topo_proactive misc.my_flow_stats
-# zeby wyswietlalo na poziomie debug
-./pox.py openflow.discovery forwarding.my_topo_proactive misc.my_flow_stats log.level --DEBUG
-./pox.py openflow.discovery forwarding.my_l2_multi misc.my_flow_stats log.level --DEBUG
-
-
-(tego polecenia używamy na maszynce, ale lepiej odpoalić przez ssh)
-sudo mn --custom ~/mininet/custom/topo-3sw-2host.py --topo mytopo --test pingall --controller=remote
-
-ssh:
-odpalamy maszynkę z mininetem (przez VBoxa)
-ifconfig: ip z 192...
-
-ssh -X mininet@192.168.56.101
-pass: mininet
-odaplamy w mininecie skrypt z siecią
-cd mininet_scripts
-sudo python 5sw-2host-proactive_net.py
-albo
-sudo python my_proactive_net.py
-albo jakiś inny
-[jeżeli zacięło się na switchach to pewnie nie jest odpalony kontroler, Ctrl+c, sudo mn do wyczyszczenia o od nowa]
-
-loklany skrypt do odpalania
-sudo python proactive_net.py
-
-running script from local machine to ssh (to nie działa niestety tak jak trzeba..._
-sudo cat proactive_net.py | ssh -X mininet@192.168.56.101 sudo python -
-
-
-iperfy
-s2 sudo wireshark &
-h1 iperf -s -p 666 &
-h2 iperf  -c h1 -p 666 -t 15
-
-flow tables
-mininet@mininet-vm:~$ sudo ovs-ofctl dump-flows s1
 

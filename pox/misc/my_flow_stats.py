@@ -37,7 +37,7 @@ from pox.forwarding.my_l2_multi import Switch
 
 
 time_period = 5 # time between stats requests
-threshhold = 3000000 # = 3Mbit/s
+threshhold = 2000000 # = 3Mbit/s  na 8 dla all
 paths = defaultdict(lambda:defaultdict(lambda:[]))
 log = core.getLogger()
 sws = {} # switches
@@ -67,6 +67,10 @@ def get_paths():
     # to do - > add some clearing for stats
   else:
     log.debug("EQUAL - paths has not changed since last time we checked")
+
+
+  from pox.forwarding.my_l2_multi import path_map
+  global path_map
 
   from pox.forwarding.my_l2_multi import host_switch_pair
   global host_switch_pair
@@ -151,11 +155,15 @@ def _handle_flowstats_received (event):
             if flow.byte_diff/time_period*8 > threshhold:
               log.debug("Uuuuuu, found big flow! %s", flow.match)
               print "Sw src, sw dst: ", flow.switch_src, flow.switch_dst
+              intermediate = path_map[flow.switch_src][flow.switch_dst][1]
+              if intermediate is None:
+                print "Directly connected"
+
               best_path = find_best_path(flow.switch_src, flow.switch_dst)
               print "best path, flow path:"
               print best_path, "\n", flow.path
               if best_path != flow.path and best_path is not None:
-                print "Path of big flow is not the best path!"
+                print "\nPath of big flow is not the best path - moved!\n"
                 Switch.delete_path(sws[event.connection.dpid], flow.path, flow.match)
                 Switch._install_path(sws[event.connection.dpid], best_path, flow.match)
                 flow.path = best_path
